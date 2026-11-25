@@ -1,3 +1,4 @@
+
 name: Build Android APK
 
 on:
@@ -11,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Node
@@ -25,13 +26,25 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Create Android wrapper
+      - name: Prepare Web Files
         run: |
-          echo '{"name":"egypt-explorer","version":"1.0.0","private":true}' > package.json
-          echo '{"appId":"com.egypt.explorer","appName":"Egypt Explorer","webDir":".","plugins":{}}' > capacitor.config.json
+          mkdir -p www
+          rsync -av ./ www/ \
+            --exclude=www \
+            --exclude=android \
+            --exclude=node_modules \
+            --exclude=.git \
+            --exclude=.github
+
+      - name: Setup Capacitor
+        run: |
+          npm init -y
           npm install @capacitor/core @capacitor/cli @capacitor/android
+          echo '{"appId":"com.egypt.explorer","appName":"Egypt Explorer","webDir":"www"}' > capacitor.config.json
           npx cap add android
-          npx cap sync android
+
+      - name: Sync Android
+        run: npx cap sync android
 
       - name: Build APK
         run: |
